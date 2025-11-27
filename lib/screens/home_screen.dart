@@ -59,10 +59,11 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Icon(
-                Icons.dashboard,
-                size: 80,
-                color: Theme.of(context).primaryColor,
+              Image.asset(
+                'assets/Logo.png',
+                height: 80,
+                width: 80,
+                fit: BoxFit.contain,
               ),
               const SizedBox(height: 24),
               Text(

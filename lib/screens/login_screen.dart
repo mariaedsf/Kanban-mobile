@@ -68,10 +68,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SizedBox(height: 60),
-                  Icon(
-                    Icons.task_alt,
-                    size: 80,
-                    color: Theme.of(context).primaryColor,
+                  Image.asset(
+                    'assets/Logo.png',
+                    height: 80,
+                    width: 80,
+                    fit: BoxFit.contain,
                   ),
                   const SizedBox(height: 24),
                   Text(
