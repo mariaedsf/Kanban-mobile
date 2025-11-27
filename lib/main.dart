@@ -5,6 +5,7 @@ import 'screens/register_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/tasks_screen.dart';
 import 'screens/task_form_screen.dart';
+import 'screens/settings_screen.dart';
 import 'services/auth_service.dart';
 import 'models/task.dart';
 
@@ -20,6 +21,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Kanban App',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
@@ -59,6 +61,7 @@ class MyApp extends StatelessWidget {
             return TaskFormScreen();
           }
         },
+        '/settings': (context) => const SettingsScreen(),
       },
     );
   }

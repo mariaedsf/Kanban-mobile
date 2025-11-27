@@ -112,12 +112,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       'Configurações',
                       Icons.settings,
                       Colors.grey,
-                      () => ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Configurações em desenvolvimento'),
-                          backgroundColor: Colors.grey,
-                        ),
-                      ),
+                      () => Navigator.pushNamed(context, '/settings'),
                     ),
                   ],
                 ),
