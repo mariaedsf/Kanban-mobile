@@ -49,18 +49,38 @@ class Task {
       id: json['id'],
       title: json['title'],
       description: json['description'],
-      status: TaskStatus.values.firstWhere(
-        (status) => status.toString() == 'TaskStatus.${json['status']}',
-        orElse: () => TaskStatus.todo,
-      ),
-      priority: TaskPriority.values.firstWhere(
-        (priority) => priority.toString() == 'TaskPriority.${json['priority']}',
-        orElse: () => TaskPriority.medium,
-      ),
+      status: _parseStatus(json['status']),
+      priority: _parsePriority(json['priority']),
       createdAt: DateTime.parse(json['createdAt']),
       dueDate: json['dueDate'] != null ? DateTime.parse(json['dueDate']) : null,
       userId: json['userId'],
     );
+  }
+
+  static TaskStatus _parseStatus(String? status) {
+    switch (status) {
+      case 'todo':
+        return TaskStatus.todo;
+      case 'inProgress':
+        return TaskStatus.inProgress;
+      case 'done':
+        return TaskStatus.done;
+      default:
+        return TaskStatus.todo;
+    }
+  }
+
+  static TaskPriority _parsePriority(String? priority) {
+    switch (priority) {
+      case 'high':
+        return TaskPriority.high;
+      case 'medium':
+        return TaskPriority.medium;
+      case 'low':
+        return TaskPriority.low;
+      default:
+        return TaskPriority.medium;
+    }
   }
 
   Map<String, dynamic> toJson() {
@@ -68,12 +88,34 @@ class Task {
       'id': id,
       'title': title,
       'description': description,
-      'status': status.toString().split('.').last,
-      'priority': priority.toString().split('.').last,
+      'status': _statusToString(status),
+      'priority': _priorityToString(priority),
       'createdAt': createdAt.toIso8601String(),
       'dueDate': dueDate?.toIso8601String(),
       'userId': userId,
     };
+  }
+
+  static String _statusToString(TaskStatus status) {
+    switch (status) {
+      case TaskStatus.todo:
+        return 'todo';
+      case TaskStatus.inProgress:
+        return 'inProgress';
+      case TaskStatus.done:
+        return 'done';
+    }
+  }
+
+  static String _priorityToString(TaskPriority priority) {
+    switch (priority) {
+      case TaskPriority.high:
+        return 'high';
+      case TaskPriority.medium:
+        return 'medium';
+      case TaskPriority.low:
+        return 'low';
+    }
   }
 
   Task copyWith({

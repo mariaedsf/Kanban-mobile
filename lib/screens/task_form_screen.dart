@@ -26,6 +26,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
   TaskPriority _priority = TaskPriority.medium;
   DateTime? _dueDate;
   bool _isLoading = false;
+  dynamic _routeArguments;
 
   @override
   void initState() {
@@ -38,6 +39,30 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
       _dueDate = widget.task!.dueDate;
     } else if (widget.initialStatus != null) {
       _status = widget.initialStatus!;
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    
+    // Store route arguments for later use
+    _routeArguments = ModalRoute.of(context)!.settings.arguments;
+    
+    // Handle task being passed through arguments
+    Task? taskFromArguments;
+    
+    if (_routeArguments is Map) {
+      taskFromArguments = _routeArguments['task'] as Task?;
+    }
+    
+    if (taskFromArguments != null) {
+      // Use a local variable instead of assigning to final widget.task
+      _titleController.text = taskFromArguments.title;
+      _descriptionController.text = taskFromArguments.description;
+      _status = taskFromArguments.status;
+      _priority = taskFromArguments.priority;
+      _dueDate = taskFromArguments.dueDate;
     }
   }
 
@@ -70,23 +95,30 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
     });
 
     try {
-      final user = ModalRoute.of(context)!.settings.arguments as String;
+      final user = _routeArguments is Map
+          ? (_routeArguments['userId'] as String)
+          : (_routeArguments as String);
+      
+      // Check if we're editing an existing task
+      final taskFromArguments = _routeArguments is Map ? _routeArguments['task'] as Task? : null;
+      final isEditing = taskFromArguments != null || widget.task != null;
+      final taskToEdit = taskFromArguments ?? widget.task;
       
       final task = Task(
-        id: widget.task?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
+        id: isEditing ? (taskToEdit!.id) : DateTime.now().millisecondsSinceEpoch.toString(),
         title: _titleController.text.trim(),
         description: _descriptionController.text.trim(),
         status: _status,
         priority: _priority,
-        createdAt: widget.task?.createdAt ?? DateTime.now(),
+        createdAt: isEditing ? (taskToEdit!.createdAt) : DateTime.now(),
         dueDate: _dueDate,
         userId: user,
       );
 
-      if (widget.task == null) {
-        await _taskService.addTask(task);
-      } else {
+      if (isEditing) {
         await _taskService.updateTask(task);
+      } else {
+        await _taskService.addTask(task);
       }
 
       if (mounted) {
