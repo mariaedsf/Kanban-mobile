@@ -156,7 +156,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
       case TaskPriority.high:
         return 'Alta';
       case TaskPriority.medium:
-        return 'Média';
+        return 'Media';
       case TaskPriority.low:
         return 'Baixa';
     }

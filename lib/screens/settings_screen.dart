@@ -234,7 +234,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     if (confirmed == true) {
       try {
-        await _taskService.clearAllTasks();
+        if (_currentUser == null) {
+          throw Exception('Usuario nao encontrado');
+        }
+        await _taskService.clearAllTasks(_currentUser!.id);
         
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

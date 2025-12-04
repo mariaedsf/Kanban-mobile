@@ -1,91 +1,58 @@
-import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/task.dart';
 
 class TaskService {
-  static const String _tasksKey = 'kanban_tasks';
-  
+  TaskService() : _tasks = FirebaseFirestore.instance.collection('tasks');
+
+  final CollectionReference<Map<String, dynamic>> _tasks;
+
   Future<List<Task>> getTasks(String userId) async {
-    final prefs = await SharedPreferences.getInstance();
-    final tasksJson = prefs.getString(_tasksKey);
-    
-    if (tasksJson == null) {
-      return [];
-    }
-    
-    final List<dynamic> tasksList = json.decode(tasksJson);
-    return tasksList
-        .map((taskJson) => Task.fromJson(taskJson))
-        .where((task) => task.userId == userId)
-        .toList();
+    final snapshot = await _tasks.where('userId', isEqualTo: userId).get();
+    return snapshot.docs.map(Task.fromFirestore).toList();
   }
-  
+
   Future<Task> addTask(Task task) async {
-    final prefs = await SharedPreferences.getInstance();
-    final tasksJson = prefs.getString(_tasksKey);
-    
-    List<Task> tasks = [];
-    if (tasksJson != null) {
-      final List<dynamic> tasksList = json.decode(tasksJson);
-      tasks = tasksList.map((taskJson) => Task.fromJson(taskJson)).toList();
-    }
-    
-    tasks.add(task);
-    await _saveTasks(tasks);
-    
-    return task;
+    final docRef = task.id.isNotEmpty ? _tasks.doc(task.id) : _tasks.doc();
+    final newTask = task.copyWith(id: docRef.id, createdAt: DateTime.now());
+    await docRef.set(newTask.toFirestore());
+    return newTask;
   }
-  
+
   Future<Task> updateTask(Task task) async {
-    final prefs = await SharedPreferences.getInstance();
-    final tasksJson = prefs.getString(_tasksKey);
-    
-    List<Task> tasks = [];
-    if (tasksJson != null) {
-      final List<dynamic> tasksList = json.decode(tasksJson);
-      tasks = tasksList.map((taskJson) => Task.fromJson(taskJson)).toList();
-    }
-    
-    final index = tasks.indexWhere((t) => t.id == task.id);
-    if (index != -1) {
-      tasks[index] = task;
-      await _saveTasks(tasks);
-    }
-    
+    await _tasks.doc(task.id).set(task.toFirestore(), SetOptions(merge: true));
     return task;
   }
-  
+
   Future<bool> deleteTask(String taskId) async {
-    final prefs = await SharedPreferences.getInstance();
-    final tasksJson = prefs.getString(_tasksKey);
-    
-    if (tasksJson == null) {
-      return false;
-    }
-    
-    List<Task> tasks = [];
-    final List<dynamic> tasksList = json.decode(tasksJson);
-    tasks = tasksList.map((taskJson) => Task.fromJson(taskJson)).toList();
-    
-    tasks.removeWhere((task) => task.id == taskId);
-    await _saveTasks(tasks);
-    
+    await _tasks.doc(taskId).delete();
     return true;
   }
-  
+
   Future<List<Task>> getTasksByStatus(String userId, TaskStatus status) async {
-    final allTasks = await getTasks(userId);
-    return allTasks.where((task) => task.status == status).toList();
+    final snapshot = await _tasks
+        .where('userId', isEqualTo: userId)
+        .where('status', isEqualTo: _statusToString(status))
+        .get();
+    return snapshot.docs.map(Task.fromFirestore).toList();
   }
-  
-  Future<void> _saveTasks(List<Task> tasks) async {
-    final prefs = await SharedPreferences.getInstance();
-    final tasksJson = json.encode(tasks.map((task) => task.toJson()).toList());
-    await prefs.setString(_tasksKey, tasksJson);
+
+  Future<void> clearAllTasks(String userId) async {
+    final snapshot = await _tasks.where('userId', isEqualTo: userId).get();
+    final batch = FirebaseFirestore.instance.batch();
+    for (final doc in snapshot.docs) {
+      batch.delete(doc.reference);
+    }
+    await batch.commit();
   }
-  
-  Future<void> clearAllTasks() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_tasksKey);
+
+  String _statusToString(TaskStatus status) {
+    switch (status) {
+      case TaskStatus.todo:
+        return 'todo';
+      case TaskStatus.inProgress:
+        return 'inProgress';
+      case TaskStatus.done:
+        return 'done';
+    }
   }
 }

@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 enum TaskStatus {
   todo,
   inProgress,
@@ -46,14 +48,28 @@ class Task {
 
   factory Task.fromJson(Map<String, dynamic> json) {
     return Task(
-      id: json['id'],
-      title: json['title'],
-      description: json['description'],
-      status: _parseStatus(json['status']),
-      priority: _parsePriority(json['priority']),
-      createdAt: DateTime.parse(json['createdAt']),
-      dueDate: json['dueDate'] != null ? DateTime.parse(json['dueDate']) : null,
-      userId: json['userId'],
+      id: json['id'] ?? '',
+      title: json['title'] ?? '',
+      description: json['description'] ?? '',
+      status: _parseStatus(json['status'] as String?),
+      priority: _parsePriority(json['priority'] as String?),
+      createdAt: _parseDate(json['createdAt']),
+      dueDate: json['dueDate'] != null ? _parseDate(json['dueDate']) : null,
+      userId: json['userId'] ?? '',
+    );
+  }
+
+  factory Task.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final data = doc.data() ?? {};
+    return Task(
+      id: (data['id'] as String?) ?? doc.id,
+      title: data['title'] as String? ?? '',
+      description: data['description'] as String? ?? '',
+      status: _parseStatus(data['status'] as String?),
+      priority: _parsePriority(data['priority'] as String?),
+      createdAt: _parseDate(data['createdAt']),
+      dueDate: data['dueDate'] != null ? _parseDate(data['dueDate']) : null,
+      userId: data['userId'] as String? ?? '',
     );
   }
 
@@ -83,6 +99,19 @@ class Task {
     }
   }
 
+  static DateTime _parseDate(dynamic value) {
+    if (value is Timestamp) {
+      return value.toDate();
+    }
+    if (value is DateTime) {
+      return value;
+    }
+    if (value is String) {
+      return DateTime.tryParse(value) ?? DateTime.now();
+    }
+    return DateTime.now();
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -92,6 +121,19 @@ class Task {
       'priority': _priorityToString(priority),
       'createdAt': createdAt.toIso8601String(),
       'dueDate': dueDate?.toIso8601String(),
+      'userId': userId,
+    };
+  }
+
+  Map<String, dynamic> toFirestore() {
+    return {
+      'id': id,
+      'title': title,
+      'description': description,
+      'status': _statusToString(status),
+      'priority': _priorityToString(priority),
+      'createdAt': createdAt,
+      'dueDate': dueDate,
       'userId': userId,
     };
   }
@@ -167,7 +209,7 @@ class Task {
       case TaskPriority.high:
         return 'Alta';
       case TaskPriority.medium:
-        return 'Média';
+        return 'Media';
       case TaskPriority.low:
         return 'Baixa';
     }
